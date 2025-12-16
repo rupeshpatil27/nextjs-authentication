@@ -1,6 +1,5 @@
 import mongoose from 'mongoose';
 
-// User Schema
 const UserSchema = new mongoose.Schema({
   username: {
     type: String,
@@ -29,10 +28,6 @@ const UserSchema = new mongoose.Schema({
   isVerified: {
     type: Boolean,
     default: false,
-  },
-  isAcceptingMessages: {
-    type: Boolean,
-    default: true,
   },
 });
 
