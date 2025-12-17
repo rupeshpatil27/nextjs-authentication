@@ -10,7 +10,7 @@ import {
   Button,
 } from '@react-email/components';
 
-export default function VerificationEmail({ username, otp }) {
+export default function VerificationEmail({ name, otp }) {
   return (
     <Html lang="en" dir="ltr">
       <Head>
@@ -29,7 +29,7 @@ export default function VerificationEmail({ username, otp }) {
       <Preview>Here&apos;s your verification code: {otp}</Preview>
       <Section>
         <Row>
-          <Heading as="h2">Hello {username},</Heading>
+          <Heading as="h2">Hello {name},</Heading>
         </Row>
         <Row>
           <Text>

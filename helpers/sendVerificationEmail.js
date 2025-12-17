@@ -3,7 +3,7 @@ import { resend } from "@/lib/resend";
 
 export async function sendVerificationEmail(
   email,
-  username,
+  name,
   verifyCode
 ) {
   try {
@@ -11,8 +11,11 @@ export async function sendVerificationEmail(
       from: 'onboarding@resend.dev',
       to: email,
       subject: 'Verification Code',
-      react: VerificationEmail({ username, otp: verifyCode }),
+      react: VerificationEmail({ name, otp: verifyCode }),
     });
+
+    console.log("data",data)
+    console.log("error",error)
 
     if (error) {
       return Response.json({ error }, { status: 500 });

@@ -5,11 +5,6 @@ const UserSchema = new mongoose.Schema({
     type: String,
     required: [true, 'Name is required'],
   },
-  username: {
-    type: String,
-    trim: true,
-    unique: true,
-  },
   email: {
     type: String,
     required: [true, 'Email is required'],
@@ -34,6 +29,6 @@ const UserSchema = new mongoose.Schema({
   },
 });
 
-const UserModel = mongoose.models.User || mongoose.model('User', UserSchema);
+const UserModel = mongoose.models.Authuser || mongoose.model('Authuser', UserSchema);
 
 export default UserModel;
