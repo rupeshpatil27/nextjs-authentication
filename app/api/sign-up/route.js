@@ -5,9 +5,9 @@ import UserModel from "@/model/userModel";
 import bcrypt from "bcryptjs";
 import { NextResponse } from "next/server";
 
-export async function POST(req) {
+export async function POST(request) {
   await dbConnect();
-  const { name, email, password } = await req.json();
+  const { name, email, password } = await request.json();
 
   try {
     if (!name) {
