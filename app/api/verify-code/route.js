@@ -8,6 +8,20 @@ export async function POST(request) {
   try {
     const { email, code } = await request.json();
 
+    if (!code) {
+      return NextResponse.json(
+        { success: false, message: "Verification code required!" },
+        { status: 400 }
+      );
+    }
+
+    if (!email) {
+      return NextResponse.json(
+        { success: false, message: "Email is required!" },
+        { status: 400 }
+      );
+    }
+
     const user = await UserModel.findOne({ email });
 
     if (!user) {
