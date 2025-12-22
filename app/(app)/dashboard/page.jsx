@@ -1,9 +1,15 @@
-import React from 'react'
+"use client"
+
+import { useSession } from "next-auth/react";
 
 const dashBoard = () => {
-  return (
-    <div>dashBoard</div>
-  )
-}
+  const { data: session } = useSession();
 
-export default dashBoard
+  if (!session || !session.user) {
+    return <div>Please login</div>;
+  }
+
+  return <div>dashBoard {JSON.stringify(session)}</div>;
+};
+
+export default dashBoard;
