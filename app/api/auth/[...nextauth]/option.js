@@ -17,7 +17,7 @@ export const authoption = {
         await dbConnect();
         try {
           const user = await UserModel.findOne({
-            email: credentials.indentifire.email,
+            email: credentials.identifire,
           });
           if (!user) {
             throw new Error("No user found.");
@@ -37,7 +37,7 @@ export const authoption = {
             throw new Error("Incorrect password.");
           }
         } catch (error) {
-          throw new Error(error);
+          throw new Error(error.message || "Authentication failed");
         }
       },
     }),
@@ -62,7 +62,7 @@ export const authoption = {
     },
   },
   pages: {
-    signIn: "/signIn",
+    signIn: "/sign-in",
   },
   session: {
     strategy: "jwt",
