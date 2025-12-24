@@ -28,8 +28,8 @@ export const signUpSchema = z.object({
   //   .string()
   //   .min(8, "Password must be at least 8 characters")
   //   .max(100, "Password is too long") // Prevents ReDoS attacks
-  //   .regex(/[A-Z]/, "Include at least one uppercase letter")
-  //   .regex(/[a-z]/, "Include at least one lowercase letter")
-  //   .regex(/[0-9]/, "Include at least one number")
-  //   .regex(/[^A-Za-z0-9]/, "Include at least one special character"),
+  //   .regex(/[A-Z]/, "Password must Include at least one uppercase letter")
+  //   .regex(/[a-z]/, "Password must Include at least one lowercase letter")
+  //   .regex(/[0-9]/, "Password must Include at least one number")
+  //   .regex(/[^A-Za-z0-9]/, "Password must Include at least one special character"),
 });

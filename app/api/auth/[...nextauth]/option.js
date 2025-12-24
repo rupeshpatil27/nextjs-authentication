@@ -1,8 +1,8 @@
 import CredentialsProvider from "next-auth/providers/credentials";
 import dbConnect from "@/lib/dbConnect";
-import UserModel from "@/model/userModel";
-
 import bcrypt from "bcryptjs";
+import { signInSchema } from "@/schemas/signInSchema";
+import { getUserByEmail } from "@/services/user";
 
 export const authoption = {
   providers: [
@@ -14,30 +14,29 @@ export const authoption = {
         password: { label: "Password", type: "password" },
       },
       async authorize(credentials) {
-        await dbConnect();
         try {
-          const user = await UserModel.findOne({
-            email: credentials.identifire,
-          });
-          if (!user) {
-            throw new Error("No user found.");
+          await dbConnect()
+          const result = signInSchema.safeParse(credentials);
+
+          if (result.success) {
+            const { email, password } = result.data;
+
+            const user = await getUserByEmail({ email });
+            if (!user || !user.password) return null;
+
+            const isPasswordCorrect = await bcrypt.compare(
+              password,
+              user.password
+            );
+
+            if (isPasswordCorrect) {
+              return user;
+            }
           }
 
-          if (!user.isVerified) {
-            throw new Error("Please verify your account.");
-          }
-
-          const isPasswordCorrect = await bcrypt.compare(
-            credentials.password,
-            user.password
-          );
-          if (isPasswordCorrect) {
-            return user;
-          } else {
-            throw new Error("Incorrect password.");
-          }
+          return null;
         } catch (error) {
-          throw new Error(error.message || "Authentication failed");
+          throw new Error(error || "Authentication failed");
         }
       },
     }),
@@ -46,16 +45,16 @@ export const authoption = {
   callbacks: {
     async jwt({ token, user }) {
       if (user) {
-        token._id = user._id?.toString();
-        token.isVerified = user.isVerified;
+        token.id = user._id?.toString();
+        token.role = user.role;
       }
 
       return token;
     },
     async session({ session, token }) {
       if (token) {
-        session.user._id = token._id;
-        session.user.isVerified = token.isVerified;
+        session.user.id = token.id;
+        session.user.role = token.role;
       }
 
       return session;
@@ -63,6 +62,7 @@ export const authoption = {
   },
   pages: {
     signIn: "/sign-in",
+    error:"/error"
   },
   session: {
     strategy: "jwt",
