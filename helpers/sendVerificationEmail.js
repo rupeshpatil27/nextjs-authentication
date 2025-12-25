@@ -3,18 +3,18 @@
 import VerificationEmail from "@/emails/VerificationEmail";
 import { resend } from "@/lib/resend";
 
-export async function sendVerificationEmail({email, name, verifyCode}) {
+export async function sendVerificationEmail({ email, name, token }) {
   try {
-
     const { data, error } = await resend.emails.send({
       from: "onboarding@resend.dev",
       to: email,
-      subject: "Verification Code",
-      react: <VerificationEmail name={name} otp={verifyCode} />,
+      subject: "Confirm your email",
+      react: <VerificationEmail name={name} token={token} />,
     });
 
     if (error) {
-      return Response.json({ error }, { status: 500 });
+      console.error("Resend Error:", error);
+      return { success: false, message: error.message };
     }
 
     return { success: true, message: "Verification email sent successfully." };

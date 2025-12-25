@@ -39,13 +39,13 @@ const UserSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
-    emailVerified: { type: Date },
-    image: { type: String },
+    emailVerified: { type: Date, default: null },
+    image: { type: String, default: null },
     role: {
       type: String,
       enum: ["USER", "ADMIN"], // Restricts the field to these two values
       default: "USER",
-    }
+    },
   },
   { timestamps: true }
 );

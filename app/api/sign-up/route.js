@@ -1,4 +1,6 @@
+import { sendVerificationEmail } from "@/helpers/sendVerificationEmail";
 import dbConnect from "@/lib/dbConnect";
+import { generateVerificationToken } from "@/lib/tokens";
 import UserModel from "@/model/userModel";
 
 import { signUpSchema } from "@/schemas/signUpSchema";
@@ -24,7 +26,7 @@ export async function POST(request) {
 
     const { name, email, password } = result.data;
 
-    const existingUser = await getUserByEmail({email})
+    const existingUser = await getUserByEmail(email);
 
     if (existingUser) {
       return Response.json(
@@ -41,13 +43,31 @@ export async function POST(request) {
       password: hashPassword,
     });
 
-    const use=await newUser.save();
-    
+    await newUser.save();
+
+    const verificationToken = await generateVerificationToken(email);
+
+    const emailRes = await sendVerificationEmail({
+      email,
+      name,
+      token: verificationToken.token,
+    });
+
+    if (!emailRes.success) {
+      return Response.json(
+        {
+          success: true,
+          message:
+            "Account created, but failed to send verification email. Please try logging in to resend.",
+        },
+        { status: 201 }
+      );
+    }
+
     return Response.json(
       {
         success: true,
-        message:
-          "Registration successful. Please check your email to verify your account.",
+        message: "Email Send!, Please verify your email.",
       },
       { status: 201 }
     );

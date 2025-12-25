@@ -2,7 +2,9 @@ import CredentialsProvider from "next-auth/providers/credentials";
 import dbConnect from "@/lib/dbConnect";
 import bcrypt from "bcryptjs";
 import { signInSchema } from "@/schemas/signInSchema";
-import { getUserByEmail } from "@/services/user";
+import { getUserByEmail, getUserById } from "@/services/user";
+import { generateVerificationToken } from "@/lib/tokens";
+import { sendVerificationEmail } from "@/helpers/sendVerificationEmail";
 
 export const authoption = {
   providers: [
@@ -14,35 +16,69 @@ export const authoption = {
         password: { label: "Password", type: "password" },
       },
       async authorize(credentials) {
-        try {
-          await dbConnect()
-          const result = signInSchema.safeParse(credentials);
+        const result = signInSchema.safeParse(credentials);
 
-          if (result.success) {
-            const { email, password } = result.data;
+        if (!result.success) {
+          throw new Error("Invalid fields!");
+        }
 
-            const user = await getUserByEmail({ email });
-            if (!user || !user.password) return null;
+        const { email, password } = result.data;
 
-            const isPasswordCorrect = await bcrypt.compare(
-              password,
-              user.password
-            );
+        await dbConnect();
 
-            if (isPasswordCorrect) {
-              return user;
-            }
+        const existingUser = await getUserByEmail(email);
+        if (!existingUser || !existingUser.email || !existingUser.password) {
+          throw new Error("Invalid credentials!");
+        }
+
+        const isPasswordCorrect = await bcrypt.compare(
+          password,
+          existingUser.password
+        );
+
+        if (!isPasswordCorrect) throw new Error("Invalid credentials!");
+
+        if (!existingUser.emailVerified) {
+          const verificationToken = await generateVerificationToken(
+            existingUser.email
+          );
+
+          const emailResponse = await sendVerificationEmail({
+            email: existingUser.email,
+            name: existingUser.name,
+            token: verificationToken.token,
+          });
+
+          if (!emailResponse.success) {
+            throw new Error("Email provider down. Try again later.");
           }
 
-          return null;
-        } catch (error) {
-          throw new Error(error || "Authentication failed");
+          throw new Error("VerificationEmailSent");
         }
+
+        return {
+          id: existingUser._id.toString(),
+          email: existingUser.email,
+          role: existingUser.role,
+          name: existingUser.name,
+        };
       },
     }),
   ],
 
   callbacks: {
+    async signIn({ user, account }) {
+      if (account?.provider !== "credentials") return true;
+
+      const existingUser = await getUserById(user.id);
+
+      if (!existingUser.emailVerified) return false;
+
+      //TODO :Add 2FA
+
+      return true; // Allow sign-in
+    },
+
     async jwt({ token, user }) {
       if (user) {
         token.id = user._id?.toString();
@@ -62,7 +98,7 @@ export const authoption = {
   },
   pages: {
     signIn: "/sign-in",
-    error:"/error"
+    error: "/error",
   },
   session: {
     strategy: "jwt",

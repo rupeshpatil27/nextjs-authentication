@@ -1,10 +1,15 @@
 "use client";
 
-import CardWrapper from "./CardWrapper";
+import { useForm } from "react-hook-form";
+import { useRouter } from "next/navigation";
+
+import { useTransition } from "react";
+import { signIn } from "next-auth/react";
+import { toast } from "sonner";
+import Link from "next/link";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm } from "react-hook-form";
-
+import CardWrapper from "./CardWrapper";
 import {
   Form,
   FormControl,
@@ -15,12 +20,8 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { useRouter } from "next/navigation";
-import { signInSchema } from "@/schemas/signInSchema";
-import { startTransition, useTransition } from "react";
-import { toast } from "sonner";
-import { signIn } from "next-auth/react";
 import { DEFAULT_LOGIN_REDIRECT } from "@/routes";
+import { signInSchema } from "@/schemas/signInSchema";
 
 const SignInForm = () => {
   const router = useRouter();
@@ -36,8 +37,6 @@ const SignInForm = () => {
 
   const onSubmit = async (data) => {
     startTransition(async () => {
-      // TODO : check try catch for error handling
-
       try {
         const result = await signIn("credentials", {
           redirect: false,
@@ -46,24 +45,26 @@ const SignInForm = () => {
         });
 
         if (result?.error) {
-          throw new Error(
-            result.error === "CredentialsSignin"
-              ? "Please check your email and password and try again."
-              : result.error
-          );
+          if (result.error === "VerificationEmailSent") {
+            toast.success("Verification email sent!", {
+              description:
+                "A new verification link has been sent to your email.",
+            });
+          } else {
+            toast.error("Invalid credentials", {
+              description: "Please check your email and password.",
+            });
+          }
+          return;
         }
 
         if (result?.ok) {
-          toast.success("Signin successfully");
+          toast.success("Signed in successfully");
           router.push("/dashboard");
           router.refresh();
         }
       } catch (error) {
-        toast.error("Signin failed.", {
-          description:
-            error.message ||
-            "An unexpected error occurred. Please try again later.",
-        });
+        toast.error("Something went wrong");
       }
     });
   };
@@ -111,6 +112,14 @@ const SignInForm = () => {
                       {...field}
                     />
                   </FormControl>
+                  <Button
+                    size="sm"
+                    variant="link"
+                    asChild
+                    className="px-0 font-normal w-fit"
+                  >
+                    <Link href="/reset">Forget password?</Link>
+                  </Button>
                   <FormMessage />
                 </FormItem>
               )}
