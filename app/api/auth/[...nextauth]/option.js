@@ -3,8 +3,14 @@ import dbConnect from "@/lib/dbConnect";
 import bcrypt from "bcryptjs";
 import { signInSchema } from "@/schemas/signInSchema";
 import { getUserByEmail, getUserById } from "@/services/user";
-import { generateVerificationToken } from "@/lib/tokens";
+import {
+  generateTwoFactorToken,
+  generateVerificationToken,
+} from "@/lib/tokens";
 import { sendVerificationEmail } from "@/helpers/sendVerificationEmail";
+import { getTwoFactorConfirmationByUserId } from "@/services/two-factor-confirmation";
+import TwoFactorConfirmationModel from "@/model/twoFactorConfirmationModel";
+import { sendTwoFactorTokenEmail } from "@/helpers/sendTwoFactorTokenEmail";
 
 export const authoption = {
   providers: [
@@ -25,10 +31,9 @@ export const authoption = {
         const { email, password } = result.data;
 
         await dbConnect();
-
         const existingUser = await getUserByEmail(email);
         if (!existingUser || !existingUser.email || !existingUser.password) {
-          throw new Error("Invalid credentials!");
+          throw new Error("InvalidCredentials");
         }
 
         const isPasswordCorrect = await bcrypt.compare(
@@ -36,7 +41,7 @@ export const authoption = {
           existingUser.password
         );
 
-        if (!isPasswordCorrect) throw new Error("Invalid credentials!");
+        if (!isPasswordCorrect) throw new Error("InvalidCredentials");
 
         if (!existingUser.emailVerified) {
           const verificationToken = await generateVerificationToken(
@@ -54,6 +59,24 @@ export const authoption = {
           }
 
           throw new Error("VerificationEmailSent");
+        }
+
+        if (existingUser.isTwoFactorEnabled && existingUser.email) {
+          const twoFactorToken = await generateTwoFactorToken(
+            existingUser.email
+          );
+
+          const emailResponse = await sendTwoFactorTokenEmail({
+            email: twoFactorToken.email,
+            name: existingUser.name,
+            token: twoFactorToken.token,
+          });
+
+          if (!emailResponse.success) {
+            throw new Error("Email provider down. Try again later.");
+          }
+
+          throw new Error("2FAEmailSent");
         }
 
         return {
@@ -74,7 +97,15 @@ export const authoption = {
 
       if (!existingUser.emailVerified) return false;
 
-      //TODO :Add 2FA
+      if (existingUser.isTwoFactorEnabled) {
+        const twoFactorConfirmation = await getTwoFactorConfirmationByUserId(
+          existingUser._id
+        );
+
+        if (!twoFactorConfirmation) return false;
+
+        await TwoFactorConfirmationModel.deleteOne({ _id: existingUser._id });
+      }
 
       return true; // Allow sign-in
     },

@@ -4,6 +4,8 @@ import { useForm } from "react-hook-form";
 import { useState } from "react";
 import { toast } from "sonner";
 import { zodResolver } from "@hookform/resolvers/zod";
+import axios from "axios";
+import { useSearchParams } from "next/navigation";
 
 import CardWrapper from "./CardWrapper";
 import {
@@ -16,24 +18,36 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { resetSchema } from "@/schemas/resetSchema";
-import axios from "axios";
+import { newPasswordSchema } from "@/schemas/newPasswordSchema";
 
-const ResetForm = () => {
+const NewPasswordForm = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  const searchParams = useSearchParams();
+  const token = searchParams.get("token");
+
   const form = useForm({
-    resolver: zodResolver(resetSchema),
+    resolver: zodResolver(newPasswordSchema),
     defaultValues: {
-      email: "",
+      password: "",
     },
   });
 
   const onSubmit = async (data) => {
     setIsSubmitting(true);
 
+    if (!token) {
+      toast.error("Error!", {
+        description: "Missing token.",
+      });
+      return;
+    }
+
     try {
-      const response = await axios.post("/api/reset", data);
+      const response = await axios.post("/api/new-password", {
+        password: data.password,
+        token,
+      });
 
       toast.success("success", { description: response.data.message });
 
@@ -50,7 +64,7 @@ const ResetForm = () => {
 
   return (
     <CardWrapper
-      headerLabel="Forgot your password?"
+      headerLabel="Enter a new Password"
       backButtonlabel="Back to sign in"
       backButtonHref="/sign-in"
     >
@@ -59,15 +73,15 @@ const ResetForm = () => {
           <div className="space-y-4">
             <FormField
               control={form.control}
-              name="email"
+              name="password"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Email</FormLabel>
+                  <FormLabel>Password</FormLabel>
                   <FormControl>
                     <Input
                       disabled={isSubmitting}
-                      placeholder="m@example.com"
-                      type="email"
+                      placeholder="***"
+                      type="password"
                       {...field}
                     />
                   </FormControl>
@@ -77,7 +91,7 @@ const ResetForm = () => {
             />
           </div>
           <Button disabled={isSubmitting} type="submit" className="w-full">
-            {isSubmitting ? "Sending email..." : "Send reset email"}
+            {isSubmitting ? "Loading..." : "Reset Password"}
           </Button>
         </form>
       </Form>
@@ -85,4 +99,4 @@ const ResetForm = () => {
   );
 };
 
-export default ResetForm;
+export default NewPasswordForm;

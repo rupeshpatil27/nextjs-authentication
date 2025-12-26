@@ -30,6 +30,12 @@ export default function PasswordResetEmail({ name = "User", token }) {
               Verify Email
             </Button>
           </Section>
+
+          <Text style={footer}>
+            If the button doesn&apos;t work, copy and paste this link into your
+            browser: <br />
+            <span style={linkText}>{url}</span>
+          </Text>
           <Text style={footer}>
             If you didn't request this, you can safely ignore this email.
           </Text>
@@ -79,4 +85,9 @@ const footer = {
   fontSize: "14px",
   color: "#8c8c8c",
   marginTop: "32px",
+};
+
+const linkText = {
+  color: "#2563eb",
+  fontSize: "12px",
 };

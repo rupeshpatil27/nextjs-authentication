@@ -50,11 +50,19 @@ const SignInForm = () => {
               description:
                 "A new verification link has been sent to your email.",
             });
-          } else {
+          } else if (result.error === "InvalidCredentials") {
             toast.error("Invalid credentials", {
               description: "Please check your email and password.",
             });
+          } else if (result.error === "2FAEmailSent") {
+            toast.success("Email sent!", {
+              description:
+                "Security code sent! If you don't see it, please check your spam folder.",
+            });
+          } else {
+            toast.error("Something went wrong");
           }
+          // AccessDenied
           return;
         }
 

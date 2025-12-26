@@ -36,7 +36,7 @@ const SignUpForm = () => {
   });
 
   const onSubmit = async (data) => {
-    setIsSubmitting(false);
+    setIsSubmitting(true);
 
     try {
       const response = await axios.post("/api/sign-up", data);
