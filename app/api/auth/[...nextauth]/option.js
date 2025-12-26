@@ -11,6 +11,8 @@ import { sendVerificationEmail } from "@/helpers/sendVerificationEmail";
 import { getTwoFactorConfirmationByUserId } from "@/services/two-factor-confirmation";
 import TwoFactorConfirmationModel from "@/model/twoFactorConfirmationModel";
 import { sendTwoFactorTokenEmail } from "@/helpers/sendTwoFactorTokenEmail";
+import { getTwoFactorTokenByEmail } from "@/services/two-factor-token";
+import TwoFactorTokenModel from "@/model/twoFactorTokenModel";
 
 export const authoption = {
   providers: [
@@ -20,6 +22,7 @@ export const authoption = {
       credentials: {
         email: { label: "Email", type: "text ", placeholder: "xxx@xx.xx" },
         password: { label: "Password", type: "password" },
+        code: { label: "Two Factor Code", type: "text" },
       },
       async authorize(credentials) {
         const result = signInSchema.safeParse(credentials);
@@ -28,7 +31,7 @@ export const authoption = {
           throw new Error("Invalid fields!");
         }
 
-        const { email, password } = result.data;
+        const { email, password, code } = result.data;
 
         await dbConnect();
         const existingUser = await getUserByEmail(email);
@@ -62,21 +65,55 @@ export const authoption = {
         }
 
         if (existingUser.isTwoFactorEnabled && existingUser.email) {
-          const twoFactorToken = await generateTwoFactorToken(
-            existingUser.email
-          );
+          if (code) {
+            const twoFactorToken = getTwoFactorTokenByEmail(existingUser.email);
 
-          const emailResponse = await sendTwoFactorTokenEmail({
-            email: twoFactorToken.email,
-            name: existingUser.name,
-            token: twoFactorToken.token,
-          });
+            if (!twoFactorToken) {
+              throw new Error("InvalidCode");
+            }
 
-          if (!emailResponse.success) {
-            throw new Error("Email provider down. Try again later.");
+            if (twoFactorToken.token !== code) {
+              throw new Error("InvalidCode");
+            }
+
+            const hasExpired = new Date(twoFactorToken.expires) < new Date();
+
+            if (hasExpired) {
+              throw new Error("ExpiredCode");
+            }
+
+            await TwoFactorTokenModel.deleteOne({ _id: twoFactorToken._id });
+
+            const existingConfirmation = await getTwoFactorConfirmationByUserId(
+              existingUser._id
+            );
+
+            if (existingConfirmation) {
+              await TwoFactorConfirmationModel.deleteOne({
+                _id: existingUser._id,
+              });
+            }
+
+            await TwoFactorConfirmationModel.create({
+              userId:existingUser._id,
+            });
+          } else {
+            const twoFactorToken = await generateTwoFactorToken(
+              existingUser.email
+            );
+
+            const emailResponse = await sendTwoFactorTokenEmail({
+              email: twoFactorToken.email,
+              name: existingUser.name,
+              token: twoFactorToken.token,
+            });
+
+            if (!emailResponse.success) {
+              throw new Error("Email provider down. Try again later.");
+            }
+
+            throw new Error("2FAEmailSent");
           }
-
-          throw new Error("2FAEmailSent");
         }
 
         return {
