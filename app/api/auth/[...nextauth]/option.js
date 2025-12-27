@@ -1,18 +1,10 @@
 import CredentialsProvider from "next-auth/providers/credentials";
-import dbConnect from "@/lib/dbConnect";
 import bcrypt from "bcryptjs";
+import dbConnect from "@/lib/dbConnect";
 import { signInSchema } from "@/schemas/signInSchema";
 import { getUserByEmail, getUserById } from "@/services/user";
-import {
-  generateTwoFactorToken,
-  generateVerificationToken,
-} from "@/lib/tokens";
-import { sendVerificationEmail } from "@/helpers/sendVerificationEmail";
 import { getTwoFactorConfirmationByUserId } from "@/services/two-factor-confirmation";
 import TwoFactorConfirmationModel from "@/model/twoFactorConfirmationModel";
-import { sendTwoFactorTokenEmail } from "@/helpers/sendTwoFactorTokenEmail";
-import { getTwoFactorTokenByEmail } from "@/services/two-factor-token";
-import TwoFactorTokenModel from "@/model/twoFactorTokenModel";
 
 export const authoption = {
   providers: [
@@ -22,106 +14,34 @@ export const authoption = {
       credentials: {
         email: { label: "Email", type: "text ", placeholder: "xxx@xx.xx" },
         password: { label: "Password", type: "password" },
-        code: { label: "Two Factor Code", type: "text" },
       },
       async authorize(credentials) {
         const result = signInSchema.safeParse(credentials);
 
-        if (!result.success) {
-          throw new Error("Invalid fields!");
-        }
+        if (result.success) {
+          const { email, password } = result.data;
 
-        const { email, password, code } = result.data;
+          await dbConnect();
+          const existingUser = await getUserByEmail(email);
+          if (!existingUser || !existingUser.email || !existingUser.password) {
+            return null;
+          }
 
-        await dbConnect();
-        const existingUser = await getUserByEmail(email);
-        if (!existingUser || !existingUser.email || !existingUser.password) {
-          throw new Error("InvalidCredentials");
-        }
-
-        const isPasswordCorrect = await bcrypt.compare(
-          password,
-          existingUser.password
-        );
-
-        if (!isPasswordCorrect) throw new Error("InvalidCredentials");
-
-        if (!existingUser.emailVerified) {
-          const verificationToken = await generateVerificationToken(
-            existingUser.email
+          const isPasswordCorrect = await bcrypt.compare(
+            password,
+            existingUser.password
           );
 
-          const emailResponse = await sendVerificationEmail({
-            email: existingUser.email,
-            name: existingUser.name,
-            token: verificationToken.token,
-          });
-
-          if (!emailResponse.success) {
-            throw new Error("Email provider down. Try again later.");
-          }
-
-          throw new Error("VerificationEmailSent");
-        }
-
-        if (existingUser.isTwoFactorEnabled && existingUser.email) {
-          if (code) {
-            const twoFactorToken = getTwoFactorTokenByEmail(existingUser.email);
-
-            if (!twoFactorToken) {
-              throw new Error("InvalidCode");
-            }
-
-            if (twoFactorToken.token !== code) {
-              throw new Error("InvalidCode");
-            }
-
-            const hasExpired = new Date(twoFactorToken.expires) < new Date();
-
-            if (hasExpired) {
-              throw new Error("ExpiredCode");
-            }
-
-            await TwoFactorTokenModel.deleteOne({ _id: twoFactorToken._id });
-
-            const existingConfirmation = await getTwoFactorConfirmationByUserId(
-              existingUser._id
-            );
-
-            if (existingConfirmation) {
-              await TwoFactorConfirmationModel.deleteOne({
-                _id: existingUser._id,
-              });
-            }
-
-            await TwoFactorConfirmationModel.create({
-              userId:existingUser._id,
-            });
-          } else {
-            const twoFactorToken = await generateTwoFactorToken(
-              existingUser.email
-            );
-
-            const emailResponse = await sendTwoFactorTokenEmail({
-              email: twoFactorToken.email,
+          if (isPasswordCorrect) {
+            return {
+              id: existingUser._id.toString(),
+              email: existingUser.email,
+              role: existingUser.role,
               name: existingUser.name,
-              token: twoFactorToken.token,
-            });
-
-            if (!emailResponse.success) {
-              throw new Error("Email provider down. Try again later.");
-            }
-
-            throw new Error("2FAEmailSent");
+            };
           }
         }
-
-        return {
-          id: existingUser._id.toString(),
-          email: existingUser.email,
-          role: existingUser.role,
-          name: existingUser.name,
-        };
+        return null;
       },
     }),
   ],
@@ -141,7 +61,7 @@ export const authoption = {
 
         if (!twoFactorConfirmation) return false;
 
-        await TwoFactorConfirmationModel.deleteOne({ _id: existingUser._id });
+        await TwoFactorConfirmationModel.deleteOne({ _id: twoFactorConfirmation._id });
       }
 
       return true; // Allow sign-in

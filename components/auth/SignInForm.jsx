@@ -4,7 +4,6 @@ import { useForm } from "react-hook-form";
 import { useRouter } from "next/navigation";
 
 import { useState, useTransition } from "react";
-import { signIn } from "next-auth/react";
 import { toast } from "sonner";
 import Link from "next/link";
 
@@ -20,8 +19,8 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { DEFAULT_LOGIN_REDIRECT } from "@/routes";
 import { signInSchema } from "@/schemas/signInSchema";
+import { signin } from "@/actions/sign-in";
 
 const SignInForm = () => {
   const router = useRouter();
@@ -33,72 +32,40 @@ const SignInForm = () => {
     defaultValues: {
       email: "",
       password: "",
+      code: "",
     },
   });
 
   const onSubmit = async (data) => {
     startTransition(async () => {
       try {
-        const result = await signIn("credentials", {
-          redirect: false,
-          email: data.email,
-          password: data.password,
-        });
-
-        if (result?.error) {
-          if (result.error === "InvalidCredentials") {
-            toast.error("Invalid credentials", {
-              description: "Please check your email and password.",
-            });
-          } else if (result.error === "InvalidCode") {
-            toast.error("Incorrect Code", {
-              description:
-                "The verification code you entered is incorrect. Please check the code and try again.",
-            });
-          } else if (result.error === "ExpiredCode") {
-            toast.error("Code Expired", {
-              description:
-                "This verification code has expired for your security. Please request a new code to sign in.",
-            });
-          } else if (result.error === "VerificationEmailSent") {
-            form.reset();
-            toast.success("Verification email sent!", {
-              description:
-                "A new verification link has been sent to your email.",
-            });
-          } else if (result.error === "2FAEmailSent") {
-            setShowTwoFactor(true);
-            toast.success("Email sent!", {
-              description:
-                "Security code sent! If you don't see it, please check your spam folder.",
-            });
-          } else {
-            form.reset();
-            toast.error("Something went wrong");
-          }
-          // AccessDenied
-          return;
+        const response = await signin(data);
+        if (response?.error) {
+          toast.error(response?.error);
         }
 
-        if (result?.ok) {
-          form.reset();
-          toast.success("Signed in successfully");
-          router.push("/dashboard");
-          router.refresh();
+        if (response?.success) {
+          toast.success(response?.success);
+        }
+
+        if (response?.twoFactor) {
+          setShowTwoFactor(true);
         }
       } catch (error) {
         form.reset();
-        toast.error("Something went wrong");
+        toast.error("Sign In Failed", { description: "Something went wrong" });
       }
     });
   };
 
   return (
     <CardWrapper
-      headerLabel="Welcome back"
-      backButtonlabel="Don't have an account?"
-      backButtonHref="/sign-up"
-      showSocial
+      headerLabel={showTwoFactor ? "Two-Factor Authentication" : "Welcome back"}
+      backButtonlabel={
+        showTwoFactor ? "Back to Login" : "Don't have an account?"
+      }
+      backButtonHref={showTwoFactor ? "#" : "/sign-up"}
+      showSocial={!showTwoFactor}
     >
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
@@ -109,7 +76,7 @@ const SignInForm = () => {
                 name="code"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Two Factor Code</FormLabel>
+                    <FormLabel>Security Code</FormLabel>
                     <FormControl>
                       <Input
                         disabled={isPending}
@@ -157,6 +124,7 @@ const SignInForm = () => {
                           {...field}
                         />
                       </FormControl>
+                      <FormMessage />
                       <Button
                         size="sm"
                         variant="link"
@@ -165,7 +133,6 @@ const SignInForm = () => {
                       >
                         <Link href="/reset">Forget password?</Link>
                       </Button>
-                      <FormMessage />
                     </FormItem>
                   )}
                 />
@@ -173,12 +140,12 @@ const SignInForm = () => {
             )}
           </div>
           <Button disabled={isPending} type="submit" className="w-full">
-            {showTwoFactor
-              ? isPending
+            {isPending
+              ? showTwoFactor
                 ? "Verifying..."
-                : "Confirm"
-              : isPending
-                ? "Signing in..."
+                : "Signing in..."
+              : showTwoFactor
+                ? "Confirm Code"
                 : "Sign In"}
           </Button>
         </form>
