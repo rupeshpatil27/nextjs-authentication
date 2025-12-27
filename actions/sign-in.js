@@ -120,13 +120,14 @@ export const signin = async (values) => {
       password,
     });
   } catch (error) {
-    // switch (error.type) {
-    //   case "CredentialsSignin":
-    //     return { error: "InvalidCredentials" };
-
-    //   default:
-    //     return { error: "GENERIC_ERROR" };
-    // }
+    if (error instanceof Error) {
+      switch (error.type) {
+        case "CredentialsSignin":
+          return { error: "InvalidCredentials" };
+        default:
+          return { error: "GENERIC_ERROR" };
+      }
+    }
     throw new Error(error);
   }
 };
