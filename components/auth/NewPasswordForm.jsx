@@ -4,7 +4,6 @@ import { useForm } from "react-hook-form";
 import { useState } from "react";
 import { toast } from "sonner";
 import { zodResolver } from "@hookform/resolvers/zod";
-import axios from "axios";
 import { useSearchParams } from "next/navigation";
 
 import CardWrapper from "./CardWrapper";
@@ -19,6 +18,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { newPasswordSchema } from "@/schemas/newPasswordSchema";
+import { newPassword } from "@/actions/new-password";
 
 const NewPasswordForm = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -37,26 +37,26 @@ const NewPasswordForm = () => {
     setIsSubmitting(true);
 
     if (!token) {
-      toast.error("Error!", {
-        description: "Missing token.",
-      });
+      setIsSubmitting(false);
+      toast.error("Missing token.");
       return;
     }
 
     try {
-      const response = await axios.post("/api/new-password", {
+      const response = await newPassword({
         password: data.password,
         token,
       });
+      if (response?.error) {
+        toast.error(response?.error);
+      }
 
-      toast.success("success", { description: response.data.message });
-
-      // router.replace(`verify/${data.email}`);
+      if (response?.success) {
+        form.reset();
+        toast.success(response?.success);
+      }
     } catch (error) {
-      console.log(error);
-      toast.error("Error!", {
-        description: error.response?.data.message || "Something went wrong!",
-      });
+      toast.error(error.message);
     } finally {
       setIsSubmitting(false);
     }

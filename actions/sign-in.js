@@ -1,6 +1,5 @@
 "use server";
 
-import { signIn } from "next-auth/react";
 import { sendVerificationEmail } from "@/helpers/sendVerificationEmail";
 import {
   generateTwoFactorToken,
@@ -13,6 +12,10 @@ import { getTwoFactorConfirmationByUserId } from "@/services/two-factor-confirma
 import { getTwoFactorTokenByEmail } from "@/services/two-factor-token";
 import { getUserByEmail } from "@/services/user";
 import dbConnect from "@/lib/dbConnect";
+import { DEFAULT_LOGIN_REDIRECT } from "@/routes";
+import { signIn } from "@/auth";
+import { AuthError } from "next-auth";
+import { sendTwoFactorTokenEmail } from "@/helpers/sendTwoFactorTokenEmail";
 
 export const signin = async (values) => {
   const result = signInSchema.safeParse(values);
@@ -43,7 +46,7 @@ export const signin = async (values) => {
 
     if (!emailResponse.success) {
       return {
-        error: "We're having trouble sending emails. Please try again later.",
+        error: "We're having trouble sending verification email emails. Please try again later.",
       };
     }
 
@@ -114,20 +117,23 @@ export const signin = async (values) => {
   }
 
   try {
-    const result = await signIn("credentials", {
-      redirect: false,
+    await signIn("credentials", {
       email,
       password,
+      redirectTO: DEFAULT_LOGIN_REDIRECT,
     });
   } catch (error) {
-    if (error instanceof Error) {
+    if (error instanceof AuthError) {
       switch (error.type) {
         case "CredentialsSignin":
-          return { error: "InvalidCredentials" };
+          return { error: "Invalid credentials!" };
+        case "AccessDenied":
+          return { error: "Please verify your email first." };
         default:
-          return { error: "GENERIC_ERROR" };
+          return { error: "Something went wrong." };
       }
     }
-    throw new Error(error);
+
+    throw error;
   }
 };

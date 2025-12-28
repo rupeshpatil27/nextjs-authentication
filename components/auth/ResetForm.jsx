@@ -17,7 +17,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { resetSchema } from "@/schemas/resetSchema";
-import axios from "axios";
+import { reset } from "@/actions/reset";
 
 const ResetForm = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -33,16 +33,19 @@ const ResetForm = () => {
     setIsSubmitting(true);
 
     try {
-      const response = await axios.post("/api/reset", data);
+      const response = await reset(data);
+      if (response?.error) {
+        toast.error(response?.error);
+      }
 
-      toast.success("success", { description: response.data.message });
-
-      // router.replace(`verify/${data.email}`);
+      if (response?.success) {
+        form.reset();
+        toast.success(response?.success);
+      }
     } catch (error) {
+      form.reset();
       console.log(error);
-      toast.error("Error!", {
-        description: error.response?.data.message || "Something went wrong!",
-      });
+      toast.error(error.message);
     } finally {
       setIsSubmitting(false);
     }

@@ -5,8 +5,8 @@ import CardWrapper from "./CardWrapper";
 
 import { BeatLoader } from "react-spinners";
 import { Suspense, useCallback, useEffect, useRef, useState } from "react";
-import axios from "axios";
 import { toast } from "sonner";
+import { newVerification } from "@/actions/new-verification";
 
 const VerificationContent = () => {
   const verificationStarted = useRef(false);
@@ -22,16 +22,16 @@ const VerificationContent = () => {
     }
 
     try {
-      const response = await axios.post("/api/new-verification", {
-        token,
-      });
+      const response = await newVerification(token);
+      if (response?.error) {
+        toast.error(response?.error);
+      }
 
-      toast.success("success", { description: response.data.message });
-      
+      if (response?.success) {
+        toast.success(response?.success);
+      }
     } catch (error) {
-      const message = error.response?.data?.message || "Verification failed.";
-      setError(message);
-      toast.error("Error", { description: message });
+      toast.error(error.message);
     }
   }, [token]);
 

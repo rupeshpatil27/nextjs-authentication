@@ -53,7 +53,8 @@ const SignInForm = () => {
         }
       } catch (error) {
         form.reset();
-        toast.error("Sign In Failed", { description: "Something went wrong" });
+        console.log(error);
+        toast.error(error.message);
       }
     });
   };

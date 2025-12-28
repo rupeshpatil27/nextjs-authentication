@@ -15,16 +15,13 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { toast } from "sonner";
 import { signUpSchema } from "@/schemas/signUpSchema";
-import axios from "axios";
+import { signup } from "@/actions/sign-up";
 
 const SignUpForm = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
-
-  const router = useRouter();
 
   const form = useForm({
     resolver: zodResolver(signUpSchema),
@@ -39,16 +36,19 @@ const SignUpForm = () => {
     setIsSubmitting(true);
 
     try {
-      const response = await axios.post("/api/sign-up", data);
+      const response = await signup(data);
+      if (response?.error) {
+        toast.error(response?.error);
+      }
 
-      toast.success("success", { description: response.data.message });
-
-      // router.replace(`verify/${data.email}`);
+      if (response?.success) {
+        form.reset();
+        toast.success(response?.success);
+      }
     } catch (error) {
+      form.reset();
       console.log(error);
-      toast.error("Signup failed", {
-        description: error.response?.data.message,
-      });
+      toast.error(error.message);
     } finally {
       setIsSubmitting(false);
     }
