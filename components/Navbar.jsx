@@ -1,31 +1,53 @@
-'use client'
+"use client";
 
-import React from 'react';
-import Link from 'next/link';
-import { useSession, signOut } from 'next-auth/react';
-import { Button } from './ui/button';
+import React from "react";
+import Link from "next/link";
+
+import { Button } from "./ui/button";
+import { logout } from "@/actions/logout";
+import { useCurrentUser } from "@/hook/use-current-user";
+import { usePathname } from "next/navigation";
+import UserButton from "./auth/UserButton";
 
 function Navbar() {
-  const { data: session } = useSession();
-  const user = session?.user;
+  const user = useCurrentUser();
+  const pathname = usePathname();
+
+  const onClick = () => {
+    logout();
+  };
 
   return (
-    <nav className="p-4 md:p-6 shadow-md bg-gray-900 text-white">
+    <nav className="p-4 md:p-3 shadow-md bg-gray-900">
       <div className="container mx-auto flex flex-col md:flex-row justify-between items-center">
-        {session ? (
-          <>
-            <span className="mr-4">
-              Welcome, {user.username || user.email}
-            </span>
-            <Button onClick={() => signOut()} className="w-full md:w-auto bg-slate-100 text-black" variant='outline'>
-              Logout
-            </Button>
-          </>
-        ) : (
-          <Link href="/sign-in">
-            <Button className="w-full md:w-auto bg-slate-100 text-black" variant={'outline'}>Login</Button>
-          </Link>
-        )}
+        <div className="flex space-x-2">
+          <Button
+            asChild
+            variant={pathname === "/dashboard" ? "default" : "outline"}
+          >
+            <Link href="/dashboard">Dashboard</Link>
+          </Button>
+          <Button
+            asChild
+            variant={pathname === "/server" ? "default" : "outline"}
+          >
+            <Link href="/server">Server</Link>
+          </Button>
+          <Button
+            asChild
+            variant={pathname === "/client" ? "default" : "outline"}
+          >
+            <Link href="/client">Client</Link>
+          </Button>
+          <Button
+            asChild
+            variant={pathname === "/admin" ? "default" : "outline"}
+          >
+            <Link href="/admin">Admin</Link>
+          </Button>
+        </div>
+
+        <UserButton />
       </div>
     </nav>
   );

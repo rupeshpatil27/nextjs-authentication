@@ -20,7 +20,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { signInSchema } from "@/schemas/signInSchema";
-import { signin } from "@/actions/sign-in";
+import { login } from "@/actions/login";
 
 const SignInForm = () => {
   const router = useRouter();
@@ -39,7 +39,7 @@ const SignInForm = () => {
   const onSubmit = async (data) => {
     startTransition(async () => {
       try {
-        const response = await signin(data);
+        const response = await login(data);
         if (response?.error) {
           toast.error(response?.error);
         }

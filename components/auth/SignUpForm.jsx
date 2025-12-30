@@ -18,7 +18,7 @@ import { Button } from "@/components/ui/button";
 import { useState } from "react";
 import { toast } from "sonner";
 import { signUpSchema } from "@/schemas/signUpSchema";
-import { signup } from "@/actions/sign-up";
+import { register } from "@/actions/register";
 
 const SignUpForm = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -36,7 +36,7 @@ const SignUpForm = () => {
     setIsSubmitting(true);
 
     try {
-      const response = await signup(data);
+      const response = await register(data);
       if (response?.error) {
         toast.error(response?.error);
       }

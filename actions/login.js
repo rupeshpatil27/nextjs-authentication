@@ -1,5 +1,6 @@
 "use server";
-
+import bcrypt from "bcryptjs";
+import { AuthError } from "next-auth";
 import { sendVerificationEmail } from "@/helpers/sendVerificationEmail";
 import {
   generateTwoFactorToken,
@@ -14,10 +15,9 @@ import { getUserByEmail } from "@/services/user";
 import dbConnect from "@/lib/dbConnect";
 import { DEFAULT_LOGIN_REDIRECT } from "@/routes";
 import { signIn } from "@/auth";
-import { AuthError } from "next-auth";
 import { sendTwoFactorTokenEmail } from "@/helpers/sendTwoFactorTokenEmail";
 
-export const signin = async (values) => {
+export const login = async (values) => {
   const result = signInSchema.safeParse(values);
 
   if (!result.success) {
@@ -30,6 +30,15 @@ export const signin = async (values) => {
 
   const existingUser = await getUserByEmail(email);
   if (!existingUser || !existingUser.email || !existingUser.password) {
+    return { error: "Invalid email or password." };
+  }
+
+  const isPasswordCorrect = await bcrypt.compare(
+    password,
+    existingUser.password
+  );
+
+  if (!isPasswordCorrect) {
     return { error: "Invalid email or password." };
   }
 
@@ -46,7 +55,8 @@ export const signin = async (values) => {
 
     if (!emailResponse.success) {
       return {
-        error: "We're having trouble sending verification email emails. Please try again later.",
+        error:
+          "We're having trouble sending verification email emails. Please try again later.",
       };
     }
 

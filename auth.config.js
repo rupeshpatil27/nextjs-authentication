@@ -30,6 +30,7 @@ export default {
               email: existingUser.email,
               role: existingUser.role,
               name: existingUser.name,
+              isTwoFactorEnabled: existingUser.isTwoFactorEnabled,
             };
           }
         }

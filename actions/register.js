@@ -9,7 +9,7 @@ import dbConnect from "@/lib/dbConnect";
 import { signUpSchema } from "@/schemas/signUpSchema";
 import UserModel from "@/model/userModel";
 
-export const signup = async (values) => {
+export const register = async (values) => {
   const result = signUpSchema.safeParse(values);
 
   if (!result.success) {

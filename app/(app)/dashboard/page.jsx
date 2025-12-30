@@ -1,15 +1,15 @@
-"use client"
+"use client";
 
-import { useSession } from "next-auth/react";
+import { useCurrentUser } from "@/hook/use-current-user";
 
 const dashBoard = () => {
-  const { data: session } = useSession();
+  const user = useCurrentUser();
 
-  if (!session || !session.user) {
+  if (!user) {
     return <div>Please login</div>;
   }
 
-  return <div>dashBoard {JSON.stringify(session)}</div>;
+  return <div>dashBoard {JSON.stringify(user)}</div>;
 };
 
 export default dashBoard;
