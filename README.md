@@ -1,13 +1,17 @@
 # Next.js Authentication System
 
-A robust authentication system built with **Next.js** and **Auth.js v5**. This project utilizes the Credentials Provider for secure sign-in, while custom server actions handle the full user lifecycle, including registration and account recovery.
+A robust authentication system built with **Next.js** and **Auth.js v5**. This project utilizes the Credentials Provider for secure sign-in, while custom server actions handle the full user lifecycle, including registration, account recovery, and role-based permissions.
 
 ## 🚀 Features
 
 - **Session Management:** Handled efficiently via [Auth.js v5](authjs.dev).
 - **Secure Sign-In:** Utilizes the [Auth.js Credentials Provider](https://authjs.dev/getting-started/authentication/credentials) for email/password sign-in.
+- **Role-Based Access Control (RBAC):**
+  - **Protected API & Server Actions:** Sensitive data fetching and mutations are restricted to specific roles (e.g., Admins only).
+  - **Conditional UI Rendering:** Elements and pages are hidden or displayed based on the authenticated user's role.
+  - **Route Protection:** Middleware and server-side checks ensure unauthorized users cannot access restricted paths.
 - **Full User Lifecycle Management:**
-  - **User Registration:**  Secure signup with password hashing.
+  - **User Registration:** Secure signup with password hashing.
   - **Email Verification:** Token-based verification flow.
   - **Password Reset:** Secure "Forgot Password" process with time-sensitive tokens.
   - **Two-Factor Authentication (2FA):** Integrated authentication logic.
