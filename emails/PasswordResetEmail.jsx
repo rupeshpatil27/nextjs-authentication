@@ -11,7 +11,8 @@ import {
 import * as React from "react";
 
 export default function PasswordResetEmail({ name = "User", token }) {
-  const url = `http://localhost:3000/new-password?token=${token}`;
+  const domain = process.env.NEXT_PUBLIC_APP_URL;
+  const url = `${domain}/new-password?token=${token}`;
 
   return (
     <Html>

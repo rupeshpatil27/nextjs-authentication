@@ -29,22 +29,33 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     },
 
     async jwt({ token, user }) {
-      if (user) {
-        token.id = user.id;
-        token.role = user.role;
-        token.isTwoFactorEnabled = user.isTwoFactorEnabled;
-      }
+      if (!token.sub) return token;
+
+      const existingUser = await getUserById(token.sub);
+      if (!existingUser) return token;
+
+      // const existingAccount = await getAccountByUserId(existingUser.id); // for google,github login
+
+      // token.isOAuth=!!existingAccount   // for google,github login
+      token.id = existingUser.id;
+      token.name = existingUser.name;
+      token.email = existingUser.email;
+      token.role = existingUser.role;
+      token.isTwoFactorEnabled = existingUser.isTwoFactorEnabled;
 
       return token;
     },
     async session({ session, token }) {
       if (token) {
+        // session.user.isOAuth = token.isOAuth;  // for google,github login
+        session.user.isOAuth = false;  // remove this line if google,github login
         session.user.id = token.id;
+        session.user.name = token.name;
+        session.user.email = token.email;
         session.user.role = token.role;
         session.user.isTwoFactorEnabled = token.isTwoFactorEnabled;
       }
 
-      
       return session;
     },
   },

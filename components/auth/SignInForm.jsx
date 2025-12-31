@@ -1,7 +1,7 @@
 "use client";
 
 import { useForm } from "react-hook-form";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 
 import { useState, useTransition } from "react";
 import { toast } from "sonner";
@@ -27,6 +27,10 @@ const SignInForm = () => {
   const [isPending, startTransition] = useTransition();
   const [showTwoFactor, setShowTwoFactor] = useState(false);
 
+  const searchParams = useSearchParams();
+
+  const callbackUrl=searchParams.get("callbackUrl")
+
   const form = useForm({
     resolver: zodResolver(signInSchema),
     defaultValues: {
@@ -39,7 +43,7 @@ const SignInForm = () => {
   const onSubmit = async (data) => {
     startTransition(async () => {
       try {
-        const response = await login(data);
+        const response = await login(data,callbackUrl);
         if (response?.error) {
           toast.error(response?.error);
         }
@@ -101,7 +105,7 @@ const SignInForm = () => {
                       <FormControl>
                         <Input
                           disabled={isPending}
-                          placeholder="m@example.com"
+                          placeholder="john.doe@example.com"
                           type="email"
                           {...field}
                         />

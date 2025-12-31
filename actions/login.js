@@ -17,7 +17,7 @@ import { DEFAULT_LOGIN_REDIRECT } from "@/routes";
 import { signIn } from "@/auth";
 import { sendTwoFactorTokenEmail } from "@/helpers/sendTwoFactorTokenEmail";
 
-export const login = async (values) => {
+export const login = async (values, callbackUrl) => {
   const result = signInSchema.safeParse(values);
 
   if (!result.success) {
@@ -130,7 +130,7 @@ export const login = async (values) => {
     await signIn("credentials", {
       email,
       password,
-      redirectTO: DEFAULT_LOGIN_REDIRECT,
+      redirectTO: callbackUrl || DEFAULT_LOGIN_REDIRECT,
     });
   } catch (error) {
     if (error instanceof AuthError) {

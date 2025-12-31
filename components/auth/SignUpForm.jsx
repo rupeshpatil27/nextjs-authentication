@@ -88,7 +88,7 @@ const SignUpForm = () => {
                   <FormControl>
                     <Input
                       disabled={isSubmitting}
-                      placeholder="m@example.com"
+                      placeholder="john.doe@example.com"
                       type="email"
                       {...field}
                     />

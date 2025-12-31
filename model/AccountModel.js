@@ -1,7 +1,7 @@
 import mongoose from "mongoose";
 
 const AccountSchema = new mongoose.Schema({
-  userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+  userId: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
   type: { type: String, required: true },
   provider: { type: String, required: true },
   providerAccountId: { type: String, required: true },
@@ -17,9 +17,8 @@ const AccountSchema = new mongoose.Schema({
 // Ensures a user can only have one account per specific provider
 AccountSchema.index({ provider: 1, providerAccountId: 1 }, { unique: true });
 
-export const Account = mongoose.models.Account || mongoose.model('Account', AccountSchema);
-
-
+export const Account =
+  mongoose.models.Account || mongoose.model("Account", AccountSchema);
 
 // const SessionSchema = new mongoose.Schema({
 //   sessionToken: { type: String, unique: true, required: true },
@@ -28,15 +27,3 @@ export const Account = mongoose.models.Account || mongoose.model('Account', Acco
 // });
 
 // export const Session = mongoose.models.Session || mongoose.model('Session', SessionSchema);
-
-
-// const VerificationTokenSchema = new mongoose.Schema({
-//   identifier: { type: String, required: true },
-//   token: { type: String, unique: true, required: true },
-//   expires: { type: Date, required: true },
-// });
-
-// VerificationTokenSchema.index({ identifier: 1, token: 1 }, { unique: true });
-
-// export const VerificationToken = mongoose.models.VerificationToken || 
-//   mongoose.model('VerificationToken', VerificationTokenSchema);
